@@ -279,6 +279,9 @@ void load_sprite_palette(const char *filename, const void *sprite_palette_buf)
 {
     uint8_t filehandle;
 
+    IO_NEXTREG_REG = 0x43;
+    IO_NEXTREG_DAT = 0x20;  // select sprite 0 palette for read/write
+
     if ((filename == NULL) || (sprite_palette_buf == NULL))
     {
         return;

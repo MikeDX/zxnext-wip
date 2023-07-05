@@ -59,6 +59,9 @@
 #define WAIT_FOR_SCANLINE(line)         while (ZXN_READ_REG(REG_ACTIVE_VIDEO_LINE_L) == line); \
                                         while (ZXN_READ_REG(REG_ACTIVE_VIDEO_LINE_L) != line)
 
+
+uint8_t sprBuf[256];
+
 void set_sprite_layers_system(bool sprites_visible,
                               bool sprites_on_border,
                               uint8_t layer_priorities,
@@ -209,6 +212,9 @@ void load_sprite_palette(const char *filename, const void *sprite_palette_buf)
 {
     uint8_t filehandle;
 
+    IO_NEXTREG_REG = 0x43;
+    IO_NEXTREG_DAT = 0x20;  // select sprite 0 palette for read/write
+
     if ((filename == NULL) || (sprite_palette_buf == NULL))
     {
         return;
@@ -244,7 +250,6 @@ end:
 int main(void)
 {
     zx_border(INK_BLUE);
-    uint8_t sprBuf[256];
     load_sprite_patterns("all.spr", sprBuf, 37, 0);
     set_sprite_pattern_slot(0);
     load_sprite_palette("all.nxp", sprBuf);

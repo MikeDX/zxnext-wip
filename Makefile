@@ -5,15 +5,15 @@ EXEC_OUTPUT=build/zxn_sprite_1
 SOURCES = main.c
 
 # Maybe you'll need to edit this
-CRT=31
+CRT=1
 
 # You don't need to edit below here, have a nice day.
 
 MKDIR = mkdir -p
 CC=zcc
 AS=zcc
-TARGET=+zxn -subtype=nex
-VERBOSITY=-vn
+TARGET=+zxn -subtype=nex #-I/Users/mike/src/zxnext_layer2/include -I/Users/mike/src/stuff/z88dk/include 
+VERBOSITY=-vn -SO3 
 OUT_DIR=build bin
 PRAGMA_FILE=zpragma.inc
 
@@ -22,8 +22,8 @@ OBJS=$(patsubst %, src/%, $(OBJECTS))
 
 C_OPT_FLAGS=-SO3 --max-allocs-per-node200000 --opt-code-size
 
-CFLAGS=$(TARGET) $(VERBOSITY) -c $(C_OPT_FLAGS) -compiler sdcc -clib=sdcc_iy -pragma-include:$(PRAGMA_FILE)
-LDFLAGS=$(TARGET) $(VERBOSITY) --list -m -s -clib=sdcc_iy -pragma-include:$(PRAGMA_FILE)
+CFLAGS=$(TARGET) $(VERBOSITY) -c $(C_OPT_FLAGS) -compiler sdcc -clib=new -pragma-include:$(PRAGMA_FILE)
+LDFLAGS=$(TARGET) $(VERBOSITY) --list -m -s -clib=new -pragma-include:$(PRAGMA_FILE) -L/Users/mike/src/zxnext_layer2/lib/sccz80/ -lzxnext_layer2
 ASFLAGS=$(TARGET) $(VERBOSITY) -c --list -m -s
 
 EXEC=$(EXEC_OUTPUT).nex

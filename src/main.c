@@ -1,11 +1,64 @@
+#define ARKOS_USE_ROM_PLAYER 1
+
 #include <arch/zxn.h>
-#include <z80.h>
 #include <input.h>
-#include <stdlib.h>
-#include <arch/zxn/esxdos.h>
-#include <stdbool.h>
+#include <z80.h>
 #include <intrinsic.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <psg/arkos.h>
+#include <arch/zxn/esxdos.h>
 #include <errno.h>
+
+#include <psg/arkos.h>
+
+#include "zxnext_layer2.h"
+
+
+#define m_zx_border( X ) zx_border(X)
+    // __asm ld a, X : out ($fe), a    __endasm 
+    
+
+
+
+#pragma output CRT_ORG_CODE = 0x6164
+#pragma output REGISTER_SP = 0xC000
+#pragma output CLIB_MALLOC_HEAP_SIZE = 0
+#pragma output CLIB_STDIO_HEAP_SIZE = 0
+#pragma output CLIB_FOPEN_MAX = -1
+#pragma printf = "%c %s"
+
+#define HAS_IMAGE
+#define HAS_SPRITES
+#define HAS_MUSIC
+
+
+#pragma printf = "%c %s %d"
+#define printAt(col, row, str) printf("\x16%c%c%s", (col), (row), (str))
+
+// #include "zxnext_layer2.h"
+
+// #include "zxnext_layer2.h"
+
+
+#if defined HAS_MUSIC
+
+extern uint8_t mysong[];
+
+void wrapper() __naked
+{
+__asm
+   INCLUDE "mysong.asm"
+__endasm;
+}
+
+#endif
+
 
 /* Sprites over layer 2 screen over ULA screen (default). */
 #define LAYER_PRIORITIES_S_L_U 0x0
@@ -68,6 +121,45 @@
 #define WAIT_FOR_SCANLINE(line)         while (ZXN_READ_REG(REG_ACTIVE_VIDEO_LINE_L) == line); \
                                         while (ZXN_READ_REG(REG_ACTIVE_VIDEO_LINE_L) != line)
 
+
+typedef struct {
+    uint8_t x, y;
+    int8_t vx, vy;
+    uint8_t spriteFlags;
+    uint8_t spritePattern;
+} sprite;
+
+
+static void init_hardware(void)
+{
+    // Put Z80 in 28 MHz turbo mode.
+    ZXN_NEXTREG(REG_TURBO_MODE, 0x03);
+
+    // Disable RAM memory contention.
+    ZXN_NEXTREGA(REG_PERIPHERAL_3, ZXN_READ_REG(REG_PERIPHERAL_3) | RP3_DISABLE_CONTENTION);
+
+    layer2_set_main_screen_ram_bank(8);
+    layer2_set_shadow_screen_ram_bank(11);
+}
+
+static void init_isr(void)
+{
+    // Set up IM2 interrupt service routine:
+    // Put Z80 in IM2 mode with a 257-byte interrupt vector table located
+    // at 0x6000 (before CRT_ORG_CODE) filled with 0x61 bytes. Install an
+    // empty interrupt service routine at the interrupt service routine
+    // entry at address 0x6161.
+
+    intrinsic_di();
+    im2_init((void *) 0x6000);
+    memset((void *) 0x6000, 0x61, 257);
+    z80_bpoke(0x6161, 0xFB);
+    z80_bpoke(0x6162, 0xED);
+    z80_bpoke(0x6163, 0x4D);
+    intrinsic_ei();
+}
+
+#ifdef HAS_SPRITES
 void set_sprite_layers_system(bool sprites_visible,
                               bool sprites_on_border,
                               uint8_t layer_priorities,
@@ -93,6 +185,134 @@ void set_sprite_layers_system(bool sprites_visible,
     IO_NEXTREG_REG = REG_SPRITE_LAYER_SYSTEM;
     IO_NEXTREG_DAT = value;
 }
+
+
+
+void set_sprite_attrs_mike(sprite *msprite) {
+    /*
+    set_sprite_attributes_ext(
+        sprites[i].spritePattern, 
+        sprites[i].x, 
+        sprites[i].y, 
+        0, // palette offset
+        sprites[i].spriteFlags, 
+        0, // scale
+        1 // visible
+        );
+    */
+
+    uint16_t xe = X_EXT(msprite->x);
+
+    // IO_SPRITE_ATTRIBUTE = X_LSB(xe);
+    // IO_SPRITE_ATTRIBUTE = Y_EXT(msprite->y);
+    // IO_SPRITE_ATTRIBUTE = X_MSB(xe) | msprite->spriteFlags;
+    // IO_SPRITE_ATTRIBUTE = msprite->spritePattern; //pattern_slot;
+
+
+    // uint16_t xe = msprite->x;
+
+    __asm 
+    ;     IO_SPRITE_ATTRIBUTE = X_LSB(xe);
+    __endasm
+
+    IO_SPRITE_ATTRIBUTE = X_LSB(xe);
+
+    __asm 
+    ;         IO_SPRITE_ATTRIBUTE = Y_EXT(msprite->y);
+
+    __endasm
+    
+    IO_SPRITE_ATTRIBUTE = Y_EXT(msprite->y);
+    
+    uint8_t xmsb = (xe>255) ? 1 : 0;
+
+    __asm 
+    ;   IO_SPRITE_ATTRIBUTE = (0 << PALETTE_OFFSET_SHIFT) | X_MSB(xe) | msprite->spriteFlags;
+   
+    __endasm
+    
+    // IO_SPRITE_ATTRIBUTE = (0 << PALETTE_OFFSET_SHIFT) | X_MSB(xe) | msprite->spriteFlags;
+    IO_SPRITE_ATTRIBUTE = xmsb + msprite->spriteFlags;
+    
+    __asm 
+    ;      IO_SPRITE_ATTRIBUTE = msprite->spritePattern | SPRITE_VISIBLE_MASK;
+
+    __endasm
+    
+    IO_SPRITE_ATTRIBUTE = msprite->spritePattern + SPRITE_VISIBLE_MASK;
+
+/*
+    if (scale_flags) {
+        IO_SPRITE_ATTRIBUTE = pattern_slot | SPRITE_ENABLE_ATTRIB_4;
+        IO_SPRITE_ATTRIBUTE = scale_flags;
+    } else {
+        IO_SPRITE_ATTRIBUTE = pattern_slot;
+    }
+*/
+}
+
+__asm 
+; Function set_sprite_attrs_mike_ flags 0x00000200 __smallc
+; void set_sprite_attrs_mike_(struct 0__anonstruct_125_10 sprite* msprite)
+; parameter 'struct 0__anonstruct_125_10 sprite* msprite' at sp+2 size(2)
+;                        	C_LINE	191,"src/main.c::set_sprite_attrs_mike_::0::9"
+; src/main.c::set_sprite_attrs_mike_::0::9:
+   ._set_sprite_attrs_mike_
+   	pop	bc
+   	pop	hl
+   	push	hl
+   	push	bc
+   	ld	l,(hl)
+   	ld	h,0
+   	ld	bc,32
+   	add	hl,bc
+   	push	hl
+       ;     IO_SPRITE_ATTRIBUTE =  (uint8_t) (( xe ) &  0x00FF ) ;
+   	// pop	hl
+   	// push	hl
+   	// ld	h,0
+   	ld	a,l
+   	out	(_IO_SPRITE_ATTRIBUTE),a
+       ;         IO_SPRITE_ATTRIBUTE =  (( msprite->y ) + 32) ;
+   	call	l_gint4sp	;
+   	inc	hl
+   	ld	l,(hl)
+   	ld	h,0
+   	ld	bc,32
+   	add	hl,bc
+   	ld	a,l
+   	out	(_IO_SPRITE_ATTRIBUTE),a
+       ;   IO_SPRITE_ATTRIBUTE = (0 <<  4 ) |  (uint8_t) ((( xe ) &  0x0100 ) >>  8 )  | msprite->spriteFlags;
+   	pop	hl
+   	push	hl
+   	ld	a,h
+   	and	1
+   	ld	h,a
+   	ld	l,h
+   	ld	h,0
+   	push	hl
+   	call	l_gint6sp	;
+   	ld	bc,4
+   	add	hl,bc
+   	ld	l,(hl)
+   	pop	de
+   	ld	h,d
+   	ld	a,l
+   	or	e
+   	ld	l,a
+   	out	(_IO_SPRITE_ATTRIBUTE),a
+       ;      IO_SPRITE_ATTRIBUTE = msprite->spritePattern |  0x80 ;
+   	call	l_gint4sp	;
+   	ld	bc,5
+   	add	hl,bc
+   	ld	l,(hl)
+   	ld	h,0
+   	set	7,l
+   	ld	a,l
+   	out	(_IO_SPRITE_ATTRIBUTE),a
+   	pop	bc
+   	ret
+   __endasm
 
 void set_sprite_attributes_ext(uint8_t sprite_pattern_slot,
                                uint8_t x,
@@ -279,6 +499,9 @@ void load_sprite_palette(const char *filename, const void *sprite_palette_buf)
 {
     uint8_t filehandle;
 
+    IO_NEXTREG_REG = 0x43;
+    IO_NEXTREG_DAT = 0x20;  // select sprite 0 palette for read/write
+
     if ((filename == NULL) || (sprite_palette_buf == NULL))
     {
         return;
@@ -309,89 +532,464 @@ end:
     esxdos_f_close(filehandle);
 }
 
-typedef struct {
-    uint8_t x, y;
-    int8_t vx, vy;
-    uint8_t spriteFlags;
-    uint8_t spritePattern;
-} sprite;
+
+#define NUM_SPRITES 64
+
+
+uint8_t timer = 0;
+sprite sprites[NUM_SPRITES];
+
+#endif
+
+static void init_tests(void)
+{
+    m_zx_border(INK_YELLOW);
+    zx_cls(INK_BLACK | PAPER_WHITE);
+    layer2_configure(true, false, false, 0);
+}
+
+int8_t newspeed(int8_t speed) {
+    // return -speed;
+    int8_t x = speed > 0 ? -1 : 1;
+
+    uint8_t ns = 0;
+    while(ns ==0 ) 
+        ns = (rand() %10 );
+
+    ns = ns * x;
+
+    return ns;
+}
+
+
 
 int main(void)
 {
-    
     uint8_t sprBuf[256];
-    load_sprite_patterns("clive.spr", sprBuf, 37, 0);
-    set_sprite_pattern_slot(0);
-    load_sprite_palette("clive.nxp", sprBuf);
-    set_sprite_layers_system(true, true, LAYER_PRIORITIES_S_L_U, false);
-    set_sprite_attrib_slot(0);
+    bool increment = true;
+    uint8_t offset_x = 0;
+    uint8_t offset_y = 0;
+    bool increment_x = true;
+    bool increment_y = true;
+
+    // ZXN_NEXTREG(REG_TURBO_MODE, RTM_28MHZ);
+#if defined HAS_MUSIC
+    ply_akg_init(mysong, 0);
+#endif
+
+#if defined HAS_IMAGE
+    init_hardware();
+    init_isr();
+    init_tests();
+    layer2_load_screen("screen1.nxi", NULL, 7, false);
+#endif
 
     // Endless loop
-    uint8_t timer = 0;
-    sprite sprites[10];
+#if defined HAS_MUSIC
+    unsigned char songnum = 15;//rand() % 10;
+#endif
 
-for (int i = 0; i < 10; i++) {
-    sprites[i].x = (16 * i+1);
-    sprites[i].y = 32;
-    int8_t x = -1+rand() % 2;
-    int8_t y = -1+rand() % 2;
-    sprites[i].vx = (x != 0) ? x : 1;
-    sprites[i].vy = (y != 0) ? y : 1;
-    sprites[i].spriteFlags = 0;
-    sprites[i].spritePattern = 0;
-}
+#if defined HAS_SPRITES 
+
+    __asm 
+        ; load_sprite_patterns("all.spr", sprBuf, 37, 0);
+    __endasm;
+    load_sprite_patterns("all.spr", sprBuf, 37, 0);
+
+    __asm 
+        ; set_sprite_pattern_slot(0);
+    __endasm
+    set_sprite_pattern_slot(0);
+
+    load_sprite_palette("all.nxp", sprBuf);
+    set_sprite_layers_system(true, true, LAYER_PRIORITIES_S_L_U, false);
+
+    __asm 
+    ;         set_sprite_attrib_slot(0);
+    __endasm
+    set_sprite_attrib_slot(0);
+
+    __asm 
+        ;     for (uint8_t i = 0; i < NUM_SPRITES; i++) {
+    __endasm
+    
+
+
+
+    for (uint8_t i = 0; i < NUM_SPRITES; i++) {
+
+        __asm 
+            ; sprites[i].x = i;
+        __endasm;
+        sprites[i].x = i ;
+
+        __asm 
+            ; sprites[i].y = i*2;
+        __endasm;
+
+        sprites[i].y = i % 174 ;
+
+        __asm 
+            ; int8_t x = -1 + rand() % 2;
+        __endasm;
+
+        int8_t x = -1 + rand() % 2;
+        int8_t y = -1 + rand() % 2;
+        sprites[i].vx = 0;
+        sprites[i].vy = 0;
+        while(sprites[i].vx ==0 ) 
+            sprites[i].vx = (rand() %5 ) * ((x != 0) ? x : 1);
+        while(sprites[i].vy ==0 )
+            sprites[i].vy = (rand() %5 ) * ((y != 0) ? y : 1);
+
+
+        sprites[i].spriteFlags = 0;
+        sprites[i].spritePattern = 0;
+    }
+#endif
+
+    // layer2_clear_screen(0xFF, NULL);
 
     while(1) {
-        zx_border(INK_BLUE);
-for (int i = 0; i < 10; i++) {
-    if (timer %16 == 0) {
-        sprites[i].spritePattern = ++sprites[i].spritePattern % 2;
-    }
-    uint8_t newx = sprites[i].x + sprites[i].vx;
-    if (sprites[i].vx > 0) {
-        if (newx < sprites[i].x) {
-            sprites[i].x = 255;
-            sprites[i].vx = -1;
-            sprites[i].spriteFlags = MIRROR_X_MASK;
-        } else {
-            sprites[i].x = newx;
+        // intrinsic_halt();
+        // if(1) {
+            // for (int i = 0; i < NUM_SPRITES; i++) {
+                layer2_draw_pixel(rand() % 256, rand() % 192, rand() % 256, NULL);
+                // m_zx_border(INK_WHITE);
+                // layer2_draw_line(rand() % 256, rand() % 192, rand() % 256, rand() % 192, rand() % 256, NULL);
+                // layer2_draw_rect(rand() % 256, rand() % 192, 40, 20, rand() % 256, NULL);
+                // layer2_fill_rect(rand() % 256, rand() % 192, 40, 20, rand() % 256, NULL);
+                // layer2_draw_text(rand() % 24, rand() % 32, "Hello", rand() % 256, NULL);
+
+            // }
+            // layer2_blit_transparent(rand() % 256, rand() % 192, sprite, 16, 16, NULL);
+        // }
+
+        // __asm
+        // ld a, INK_RED
+        // out($fe), a
+        // __endasm
+        // m_zx_border(INK_RED);
+
+
+#if defined HAS_MUSIC
+__asm 
+ld a, INK_BLUE
+out($fe), a
+__endasm
+            intrinsic_di();
+            ply_akg_play();
+            intrinsic_ei();
+#endif
+
+        // m_zx_border(INK_CYAN);
+
+#if defined HAS_IMAGE
+__asm 
+ld a, INK_CYAN
+out($fe), a
+__endasm
+
+/*        if (increment_x)
+        {
+            offset_x++;
         }
-    } else if (sprites[i].vx < 0) {
-        if (newx > sprites[i].x) {
-            sprites[i].x = 0;
-            sprites[i].vx = 1;
-            sprites[i].spriteFlags = 0;
-        } else {
-            sprites[i].x = newx;
-        }
-    }
-    uint8_t newy = sprites[i].y + sprites[i].vy;
-    if (sprites[i].vy > 0) {
-        if (newy > 192) {
-            sprites[i].y = 192;
-            sprites[i].vy = -1;
-        } else {
-            sprites[i].y = newy;
-        }
-    } else if (sprites[i].vy < 0) {
-        if (newy > 192) {
-            sprites[i].y = 0;
-            sprites[i].vy = 1;
-        } else {
-            sprites[i].y = newy;
-        }
-    }
-}
-        set_sprite_attrib_slot(0);
-        for (int i = 0; i < 10; i++) {
-            set_sprite_attributes_ext(sprites[i].spritePattern, sprites[i].x, sprites[i].y, 0, sprites[i].spriteFlags, 0, 1);
+        else
+        {
+            offset_x--;
         }
 
+        if (increment_y)
+        {
+            offset_y = INC_Y(offset_y);
+        }
+        else
+        {
+            offset_y = DEC_Y(offset_y);
+        }
+*/
+        layer2_set_offset_x(255-sprites[0].x);
+        layer2_set_offset_y(192-sprites[0].y);
+/*
+        if (offset_x == 0)
+        {
+            increment_x = !increment_x;
+        }
+
+        if (offset_y == 0)
+        {
+            increment_y = !increment_y;
+        }
+        */
+
+#endif
+
+#if defined HAS_MUSIC
+__asm 
+ld a, INK_RED
+out($fe), a
+__endasm
+
+            // in_Inkey();
+            if (in_inkey())
+            {
+                ply_akg_stop();
+                in_wait_nokey();
+                // songnum++;
+                if (songnum > 14) songnum = 0;
+                zx_cls(INK_BLACK | PAPER_WHITE);
+                printAt(3,  9, "Press any key for next song");
+
+                char s = songnum;
+                ply_akg_init(mysong, s);
+
+                // char num[2];
+                // itoa(songnum, num, 10);
+
+                // char str[20];
+                // strcpy(
+                //     str,
+                //     "Playing song:"
+                // );
+                // strcat(str, num);
+                // sprintf(str, "Blah [%d]", n);
+                m_zx_border(songnum);
+                printf("\x16%c%c%s %d", 3, 7, "Playing song", songnum);
+                // printAt(3,  7, str);
+            }
+            // m_zx_border(INK_BLUE);
+#endif
+
+#ifdef BORDER_TEST
+            __asm
+            ; has_sprites
+            __endasm
+
+    uint8_t b = 1;
+
+    __asm 
+    ; black yellow border 
+
+    
+    ld b, NUM_SPRITES
+
+    bl1:
+        ld a, b
+        and 1
+        cp 0
+        jp z, bl_else
+
+        // ld a, INK_YELLOW
+        out($fe),a 
+
+        jp bl_final
+
+    bl_else:
+        out ($fe),a 
+
+    bl_final:
+        djnz bl1 
+
+    xor a
+
+    __endasm
+
+
+
+    __asm 
+
+    ; c loop for black yellow border
+
+    __endasm
+    WAIT_FOR_SCANLINE(12);
+
+    for (uint8_t i = 0; i < NUM_SPRITES; i++) {
+        if (b==0) {
+            zx_border(INK_BLACK);
+        } else {
+            zx_border(INK_YELLOW);
+        }
+        b = 1-b;
+    }
+#endif
+
+    // WAIT_FOR_SCANLINE(192);
+
+    // }
+    // while (1) {
+#if defined HAS_SPRITES
+
+    __asm 
+
+    ; next sprite part
+
+    __endasm
+
+    for (int i = 0; i < NUM_SPRITES; i++) {
+                __asm
+                ;                 b = i %2
+                __endasm
+            // uint8_t b = i % 2;
+
+            __asm 
+                ; m_zx_border(b);
+                // pop hl
+                // push hl
+                // ld a, l
+                // and 1
+                // out ($fe),a
+            __endasm
+                // m_zx_border(b);
+
+            if (timer %16 == 0) {
+                sprites[i].spritePattern++;
+                sprites[i].spritePattern = sprites[i].spritePattern & 1;
+                // sprites[i].spritePattern = ++sprites[i].spritePattern  & 1;
+            }
+/*
+            if (sprites[i].vx > 0) {
+                // going right
+                __asm 
+                nop
+                __endasm
+
+            } else {
+
+                // going left
+                __asm 
+                    nop
+                __endasm
+                
+            }
+
+            if (sprites[i].vy > 0) {
+                // going down
+                __asm 
+                    nop
+                __endasm
+
+            } else {
+                // going up
+                __asm 
+                    nop
+                __endasm
+
+            }
+            */
+            // sprites[i].x += sprites[i].vx;
+            // sprites[i].y += sprites[i].vy;
+
+            // if sprites[i].x 
+        
+            uint8_t newx = sprites[i].x + sprites[i].vx;
+            if (sprites[i].vx > 0) {
+                if (newx > 240) {
+                    sprites[i].x = 240;
+                    sprites[i].vx = newspeed(sprites[i].vx);
+                    sprites[i].spriteFlags = MIRROR_X_MASK;
+                } else {
+                    sprites[i].x = newx;
+                }
+            } else if (sprites[i].vx < 0) {
+                if (newx > sprites[i].x) {
+                    sprites[i].x = 0;
+                    sprites[i].vx = newspeed(sprites[i].vx);
+                    sprites[i].spriteFlags = 0;
+                } else {
+                    sprites[i].x = newx;
+                }
+            }
+            
+            uint8_t newy = sprites[i].y + sprites[i].vy;
+            if (sprites[i].vy > 0) {
+                if (newy > 174) {
+                    sprites[i].y = 174;
+                    sprites[i].vy = newspeed(sprites[i].vy);
+                } else {
+                    sprites[i].y = newy;
+                }
+            } else if (sprites[i].vy < 0) {
+                if (newy > 192) {
+                    sprites[i].y = 0;
+                    sprites[i].vy = newspeed(sprites[i].vy);
+                } else {
+                    sprites[i].y = newy;
+                }
+            }
+        __asm 
+
+        ;         for (uint8_t i = 0; i < NUM_SPRITES; i++) {
+            ld a, INK_YELLOW
+            out($fe), a
+        __endasm
+
+            set_sprite_attrs_mike(&sprites[i]);
+
+        __asm 
+            ld a, INK_RED
+            out($fe), a
+        __endasm
+
+        }
+        __asm 
+        ;         set_sprite_attrib_slot(0);
+        __endasm
+
+        set_sprite_attrib_slot(0);
+
+
+        __asm 
+            ;         for (uint8_t i = 0; i < NUM_SPRITES; i++) {
+            ld a, INK_BLACK
+            out($fe), a
+        __endasm
+
+        if(0) {
+        // m_zx_border(INK_RED);
+        for (uint8_t i = 0; i < NUM_SPRITES; i++) {
+            __asm 
+                ; m_zx_border(i % 8);
+            __endasm
+            // m_zx_border(i % 2) + 2;
+
+            __asm 
+
+               ; set_sprite_attributes_ext(sprites[i].spritePattern, sprites[i].x, sprites[i].y, 0, sprites[i].spriteFlags, 0, 1);
+
+            __endasm
+
+            // set_sprite_attrs_mike(&sprites[i]);
+                                    // SLOT,                     X,           Y,          , PAL, FLAGS, SCALE, VISIBLE);
+
+            // set_sprite_attributes_ext(sprites[i].spritePattern, sprites[i].x, sprites[i].y, 0, sprites[i].spriteFlags, 0, 1);
+        }
+        }
+        
+        // m_zx_border(INK_YELLOW);
+        __asm
+        ld hl, _timer;
+        inc (hl);
+        __endasm;
+        // timer++;  
+        // intrinsic_halt();
+
+
+#endif
+
         WAIT_FOR_SCANLINE(192);
-        timer++;  
+
+        __asm 
+        ld a, INK_GREEN
+        out($fe), a
+        __endasm
+
+        // m_zx_border(INK_RED);
+        // WAIT_FOR_SCANLINE(194);
+        // m_zx_border(INK_BLACK);
+
+
     }
 
     return 0;
+    
 }
-
-  /* C source end */

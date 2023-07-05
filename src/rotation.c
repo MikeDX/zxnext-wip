@@ -127,7 +127,7 @@ void set_sprite_attributes(uint8_t sprite_pattern_slot,
 
 void set_sprite_pattern(const void *sprite_pattern)
 {
-    intrinsic_outi((void *) sprite_pattern, __IO_SPRITE_PATTERN, 256);
+    intrinsic_outi((void *) sprite_pattern, __IO_SPRITE_PATTERN, 128);
 }
 
 void set_sprite_pattern_slot(uint8_t sprite_slot)
@@ -208,6 +208,8 @@ void load_sprite_patterns(const char *filename,
 void load_sprite_palette(const char *filename, const void *sprite_palette_buf)
 {
     uint8_t filehandle;
+    IO_NEXTREG_REG = 0x43;
+    IO_NEXTREG_DAT = 0x20;  // select sprite 0 palette for read/write
 
     if ((filename == NULL) || (sprite_palette_buf == NULL))
     {
