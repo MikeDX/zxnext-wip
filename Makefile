@@ -2,7 +2,7 @@
 EXEC_OUTPUT=build/zxn_sprite_1
 
 # List all your source files here
-SOURCES = main.c
+SOURCES = main.c layer2.c sprites.c
 
 # Maybe you'll need to edit this
 CRT=1
@@ -23,7 +23,8 @@ OBJS=$(patsubst %, src/%, $(OBJECTS))
 C_OPT_FLAGS=-SO3 --max-allocs-per-node200000 --opt-code-size
 
 CFLAGS=$(TARGET) $(VERBOSITY) -c $(C_OPT_FLAGS) -compiler sdcc -clib=new -pragma-include:$(PRAGMA_FILE)
-LDFLAGS=$(TARGET) $(VERBOSITY) --list -m -s -clib=new -pragma-include:$(PRAGMA_FILE) -L/Users/mike/src/zxnext_layer2/lib/sccz80/ -lzxnext_layer2
+LDFLAGS=$(TARGET) $(VERBOSITY) --list -m -s -clib=new -pragma-include:$(PRAGMA_FILE) -L/Users/mike/src/zxnext_layer2/lib/sccz80/ 
+#-lzxnext_layer2
 ASFLAGS=$(TARGET) $(VERBOSITY) -c --list -m -s
 
 EXEC=$(EXEC_OUTPUT).nex
@@ -37,7 +38,7 @@ EXEC=$(EXEC_OUTPUT).nex
 all : dirs $(EXEC)
 
 $(EXEC) : $(OBJS)
-	$(CC) $(LDFLAGS) -startup=$(CRT) $(OBJS) -o $(EXEC_OUTPUT) -create-app
+	$(CC) $(LDFLAGS) --list -startup=$(CRT) $(OBJS) -o $(EXEC_OUTPUT) -create-app
 
 .PHONY: clean dirs install
 

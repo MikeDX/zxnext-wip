@@ -3,3 +3,10 @@ bin/
 src/*.lis
 src/*.sym
 src/*.o
+src/*.bin
+
+CMakeCache.txt
+cmake_install.cmake
+CMakeFiles
+.DS_Store
+.tmp/disasm.list

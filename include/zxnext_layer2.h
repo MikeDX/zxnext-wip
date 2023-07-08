@@ -519,8 +519,8 @@ void layer2_draw_rect(uint8_t x,
  *
  * Note that the printable characters in the ZX Spectrum character set (32 to
  * 127) are identical with ASCII except that ^, BACKQUOTE and DEL are replaced
- * with up-arrow, £ and (C). For example, if you want to draw the text
- * "Price in £", you use the string "Price in \x60" in your program.
+ * with up-arrow, ï¿½ and (C). For example, if you want to draw the text
+ * "Price in ï¿½", you use the string "Price in \x60" in your program.
  */
 void layer2_draw_text(uint8_t row,
                       uint8_t column,

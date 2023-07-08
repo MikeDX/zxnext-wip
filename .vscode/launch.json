@@ -1,0 +1,86 @@
+{
+    "version" : "0.2.0",
+    "configurations": [
+    {
+        "type": "dezog",
+        "request": "launch",
+        "name": "DeZog",
+        "preLaunchTask": "Copy Assets",
+        "remoteType": "zrcp",
+        "zrcp": {
+            "hostname" : "localhost",
+            "port": 10000,
+        },
+        // "zsim": {
+        //     "visualMemory": true,
+        //     "memoryModel": "ZXNEXT",
+        //     "ulaScreen": true,
+        //     "zxBorderWidth": 20,
+        //     "vsyncInterrupt": true,
+        // },
+        "z88dkv2": [
+            {
+                "path": "build/zxn_sprite_1.lis",
+                "srcDirs": [],
+                "mapFile": "build/zxn_sprite_1.map",
+                
+            },
+            // {
+            //     "mapFile": 0
+            // }
+            {
+                "path": "src/main.c.lis",
+                "srcDirs": [],
+                "mapFile": "build/zxn_sprite_1.map"
+            },
+            {
+                "path": "src/sprites.c.lis",
+                "srcDirs": [],
+                "mapFile": "build/zxn_sprite_1.map"
+            },
+            {
+                "path": "src/layer2.c.lis",
+                "srcDirs": [],
+                "mapFile": "build/zxn_sprite_1.map"
+            }
+        ],
+        // "name": "Internal Simulator",
+        // "remoteType": "zsim",
+        // "zsim": {
+        //     "visualMemory": true,
+        //     "memoryModel": "ZXNEXT",
+        //     "ulaScreen": true,
+        //     "zxBorderWidth": 20,
+        //     "vsyncInterrupt": true,
+        //     "zxKeyboard": true,
+        //     "zxBeeper": true
+        // },
+
+        // "sjasmplus": [
+        //     {
+        //         "path": "zxn_sprite_1.lis",
+        //     }
+        // ],
+        "startAutomatically": true,
+        "history": {
+            "reverseDebugInstructionCount": 10000,
+            "codeCoverageEnabled": true
+        },
+        "commandsAfterLaunch": [
+            "-sprites",
+            "-patterns"
+        ],
+        // "disassemblerArgs": {
+        //     "numberOfLines": 20
+        // },
+        // "smartDisassemblerArgs": {
+        //     "lowerCase": false
+        // },
+        "rootFolder": "${workspaceFolder}/",
+        // "topOfStack": "stack_top",
+        "load": "bin/zxn_sprite_1.nex",
+        "smallValuesMaximum": 513,
+        "tmpDir": ".tmp"        
+   }
+]
+}
