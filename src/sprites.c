@@ -52,10 +52,15 @@ __endasm
 
     __asm 
     ;     IO_SPRITE_ATTRIBUTE = X_LSB(xe);
+    
+    ld hl, (_ms)
+    ld a, (hl)
+    add a, 32
+    out (_IO_SPRITE_ATTRIBUTE), a
+    
     __endasm
 
-    
-    IO_SPRITE_ATTRIBUTE = ms->x + 32; //X_LSB(xe);
+//    IO_SPRITE_ATTRIBUTE = ms->x + 32; //X_LSB(xe);
 
     __asm
     ; y+=32
@@ -76,26 +81,55 @@ __endasm
     __asm 
     ;         IO_SPRITE_ATTRIBUTE = Y_EXT(msprite->y);
 
+    ld hl, (_ms)
+    inc hl
+    ld a, (hl)
+    add a, 32
+    out (_IO_SPRITE_ATTRIBUTE), a
+
     __endasm
+
+        
+    // IO_SPRITE_ATTRIBUTE = ms->y + 32; //Y_EXT(msprite->y);
     
-    IO_SPRITE_ATTRIBUTE = ms->y + 32; //Y_EXT(msprite->y);
-    
-    uint8_t xmsb = (ms->x > 223  )  ? 1 : 0;
+    __asm
+    ; set xmsb
+    __endasm
+    // uint8_t xmsb = (ms->x > 223  )  ? 1 : 0;
 
     __asm 
     ;   IO_SPRITE_ATTRIBUTE = (0 << PALETTE_OFFSET_SHIFT) + X_MSB(xe) + ms->spriteFlags;
    
+    // ld hl, (_ms)
+    // inc hl
+    // ld a, (hl)
+    // add a, 32
+    // out (_IO_SPRITE_ATTRIBUTE), a
+
     __endasm
     
     // IO_SPRITE_ATTRIBUTE = (0 << PALETTE_OFFSET_SHIFT) | X_MSB(xe) | msprite->spriteFlags;
-    IO_SPRITE_ATTRIBUTE = xmsb + ms->spriteFlags;
+    if ( ms->x > 223 ) {
+        IO_SPRITE_ATTRIBUTE =  ms->spriteFlags + 1;
+    } else {
+        IO_SPRITE_ATTRIBUTE = ms->spriteFlags;
+    }
+    // IO_SPRITE_ATTRIBUTE = xmsb + ms->spriteFlags;
     
     __asm 
     ;      IO_SPRITE_ATTRIBUTE = msprite->spritePattern | SPRITE_VISIBLE_MASK;
 
+    ld hl, (_ms)
+    ld a, 5
+    add a,l
+    ld l,a
+    ld a, (hl)
+    add a, SPRITE_VISIBLE_MASK
+    out (_IO_SPRITE_ATTRIBUTE), a
     __endasm
-    
-    IO_SPRITE_ATTRIBUTE = ms->spritePattern + SPRITE_VISIBLE_MASK;
+
+
+//    IO_SPRITE_ATTRIBUTE = ms->spritePattern + SPRITE_VISIBLE_MASK;
 
 /*
     if (scale_flags) {
