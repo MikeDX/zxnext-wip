@@ -38,7 +38,7 @@ EXEC=$(EXEC_OUTPUT).nex
 all : dirs $(EXEC)
 
 $(EXEC) : $(OBJS)
-	$(CC) $(LDFLAGS) --list -startup=$(CRT) $(OBJS) -o $(EXEC_OUTPUT) -create-app
+	$(CC) $(LDFLAGS) -Iinclude --list -startup=$(CRT) $(OBJS) -o $(EXEC_OUTPUT) -create-app
 
 .PHONY: clean dirs install
 
