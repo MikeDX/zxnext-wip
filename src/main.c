@@ -21,27 +21,15 @@
 #include "sprites.h"
 
 extern sprite *ms;
-// #define m_zx_border(X) \
-//     __asm \
-//     ; blah \
-//     __endasm \
-    // Blah
-
-//        ld a, X \
-//        out ($fe), a \
-//    __endasm
 
 #define m_zx_border( X ) zx_border(X)
-    // __asm ld a, X : out ($fe), a    __endasm 
-    
-
-
 
 #pragma output CRT_ORG_CODE = 0x6164
 #pragma output REGISTER_SP = 0xC000
 #pragma output CLIB_MALLOC_HEAP_SIZE = 0
 #pragma output CLIB_STDIO_HEAP_SIZE = 0
 #pragma output CLIB_FOPEN_MAX = -1
+
 #define HAS_IMAGE
 #define HAS_SPRITES
 #define HAS_MUSIC
@@ -110,7 +98,7 @@ sprite sprites[NUM_SPRITES];
 static void init_tests(void)
 {
     m_zx_border(INK_YELLOW);
-    zx_cls(INK_BLACK | PAPER_WHITE);
+    zx_cls(INK_BLACK | PAPER_CYAN);
     layer2_configure(true, false, false, 0);
 }
 
@@ -318,7 +306,7 @@ void do_x_c(void) {
 void do_y_asm(void) __naked {
 __asm
     ; border cyan
-    ld a,  INK_CYAN
+    ld a,  INK_RED
     out($fe),a
 
     ; tmp8 = y + vx
@@ -337,16 +325,16 @@ __asm
     and a
    	jp m,doy_i_8	; jump if minus (not more than zero)
 
-    ; if tmp8 > 174
+    ; if tmp8 > 176
    	ld	hl,(_tmp8)
-   	ld	a,174
+   	ld	a,176
    	sub	l
    	jr	nc,doy_i_9	; jump if carry not set
     
-    ; x = 174
+    ; x = 176
    	ld	hl,(_ms)
     inc hl
-   	ld	(hl),174 ; (_ms)+0 = y = 174
+   	ld	(hl),176 ; (_ms)+0 = y = 174
     
     ; vx = newspeed(vx)
     ; hl already contains _ms address
@@ -446,15 +434,7 @@ uint8_t i = 0;
 int main(void)
 {
     uint8_t sprBuf[256];
-    bool increment = true;
-    uint8_t offset_x = 0;
-    uint8_t offset_y = 0;
-    bool increment_x = true;
-    bool increment_y = true;
 
-
-
-    // ZXN_NEXTREG(REG_TURBO_MODE, RTM_28MHZ);
 #if defined HAS_MUSIC
     ply_akg_init(mysong, 0);
 #endif
@@ -466,47 +446,36 @@ int main(void)
     layer2_load_screen("screen1.nxi", NULL, 7, false);
 #endif
 
+    zx_cls(INK_BLACK | PAPER_CYAN);
+
+
     // Endless loop
 
 #if defined HAS_SPRITES 
 
-    __asm 
-        ; load_sprite_patterns("all.spr", sprBuf, 37, 0);
-    __endasm;
-
     load_sprite_patterns("all.spr", sprBuf, 37, 0);
 
-    __asm 
-        ; set_sprite_pattern_slot(0);
-    __endasm
     set_sprite_pattern_slot(0);
 
     load_sprite_palette("all.nxp", sprBuf);
-    set_sprite_layers_system(true, true, LAYER_PRIORITIES_S_L_U, false);
 
-    __asm 
-    ;         set_sprite_attrib_slot(0);
-    __endasm
+    set_sprite_layers_system(true, false, LAYER_PRIORITIES_S_L_U, false);
+
     set_sprite_attrib_slot(0);
 
-    __asm 
-        ;    // for (uint8_t i = 0; i < NUM_SPRITES; i++) {
-    __endasm
-    
-    for (i = 0; i < NUM_SPRITES; i++) {
+    ms = sprites;
 
-        ms = &sprites[i];
-        __asm 
-            ; sprites[i].x = i;
-        __endasm;
+    i = 0;
+    while (i < NUM_SPRITES) {
+
         ms->x = i ;
-
+        // ms->x = 0;
         __asm 
             ; ms->y = i*2;
         __endasm;
 
         ms->y = i % 174 ;
-
+        // ms->y = 0;
         __asm 
             ; int8_t x = -1 + rand() % 2;
         __endasm;
@@ -520,9 +489,15 @@ int main(void)
         while(ms->vy ==0 )
             ms->vy = (rand() %5 ) * ((y != 0) ? y : 1);
 
+        // ms->vx = 1;
+        // ms->vy = 1;
         ms->spriteFlags = 0;
         ms->spritePattern = 0;
+
+        ms++;
+        i++;
     }
+    
 #endif
 
     // layer2_clear_screen(0xFF, NULL);
@@ -604,14 +579,17 @@ int main(void)
         //     out($fe), a
         // __endasm
 
-        for (i = 0; i < NUM_SPRITES; i++) {
+        ms = sprites;
+        i = 0;
+
+        while (i < NUM_SPRITES) {
             __asm
                 ; // b = i %2
-                ld a, INK_YELLOW
-                out($fe), a
+                // ld a, INK_YELLOW
+                // out($fe), a
             __endasm
     
-            ms = &sprites[i];
+            // ms = &sprites[i];
 
             __asm 
                 ; Timer check to animate
@@ -625,12 +603,14 @@ int main(void)
             do_y();
 
             __asm
-            ; Update attributes
-                ld a, INK_RED
-                out($fe), a
+            // ; Update attributes
+            //     ld a, INK_RED
+            //     out($fe), a
             __endasm
 
             // set_sprite_attrs_mike();
+            ms++;
+            i++;
         }
         __asm 
         ;         out sprite vars
@@ -656,7 +636,7 @@ int main(void)
 #endif
 
     __asm 
-    ld a, INK_BLUE
+    ld a, INK_CYAN
     out($fe), a
     
         ; WAIT_FOR_SCANLINE_192
@@ -669,6 +649,7 @@ int main(void)
         in	a,(c) ; read scanline from 0x253b
         cp	192 ; is it 192?
         jp	nz,	start_wait_for_scanline_192_loop ; repeat if not
+        
     __endasm
 
         // Do the sprite update after the screen update
@@ -700,17 +681,17 @@ int main(void)
 
 
             ld a, (_i)
-            sub 128
+            sub NUM_SPRITES
             jp nc, endupdate
 
-            // ld a, INK_RED
-            // out($fe), a
+            ld a, INK_RED
+            out($fe), a
 
             call _set_sprite_attrs_mike
 
             ; border blaack
-            // ld a, INK_BLACK
-            // out($fe), a
+            ld a, INK_BLACK
+            out($fe), a
 
             ; inc _i
             ld a, (_i)

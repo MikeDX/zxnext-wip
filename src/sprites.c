@@ -106,25 +106,55 @@ __endasm
     // add a, 32
     // out (_IO_SPRITE_ATTRIBUTE), a
 
+    ; if ms->223
     __endasm
     
+
     // IO_SPRITE_ATTRIBUTE = (0 << PALETTE_OFFSET_SHIFT) | X_MSB(xe) | msprite->spriteFlags;
+
+#if 1
+    __asm
+    	ld	hl,(_ms)
+        ld	bc,4
+    	ld	a,223
+    	sub	(hl)
+    	jr	nc,reg3i_6	;
+
+    	add	hl,bc
+        ld a, (hl)
+        inc a
+    	out	(_IO_SPRITE_ATTRIBUTE),a
+    	jr	reg3i_7	;EOS
+    .reg3i_6
+    	add	hl,bc
+        ld a, (hl)
+    	out	(_IO_SPRITE_ATTRIBUTE),a
+
+    .reg3i_7
+        ;      IO_SPRITE_ATTRIBUTE = msprite->spritePattern |  0x80 ;
+    __endasm
+#else
+
     if ( ms->x > 223 ) {
         IO_SPRITE_ATTRIBUTE =  ms->spriteFlags + 1;
     } else {
         IO_SPRITE_ATTRIBUTE = ms->spriteFlags;
     }
+#endif
+
     // IO_SPRITE_ATTRIBUTE = xmsb + ms->spriteFlags;
     
     __asm 
     ;      IO_SPRITE_ATTRIBUTE = msprite->spritePattern | SPRITE_VISIBLE_MASK;
 
     ld hl, (_ms)
-    ld a, 5
-    add a,l
-    ld l,a
+    ld bc, 5
+    add hl, bc
     ld a, (hl)
-    add a, SPRITE_VISIBLE_MASK
+    ld b, SPRITE_VISIBLE_MASK
+    or b
+
+    // add a, SPRITE_VISIBLE_MASK
     out (_IO_SPRITE_ATTRIBUTE), a
     __endasm
 
