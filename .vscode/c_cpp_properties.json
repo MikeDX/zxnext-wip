@@ -4,6 +4,7 @@
             "name": "Mac",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/include",
                 "/Users/mike/src/stuff/z88dk/include",
                 "/Users/mike/src/stuff/z88dk/include/arch"                
             ],

@@ -30,9 +30,9 @@ extern sprite *ms;
 #pragma output CLIB_STDIO_HEAP_SIZE = 0
 #pragma output CLIB_FOPEN_MAX = -1
 
-#define HAS_IMAGE
+#define HAS_IMAGE 1
 #define HAS_SPRITES
-#define HAS_MUSIC
+#define HAS_MUSIC 1
 
 
 #pragma printf = "%c %s %d"
@@ -86,6 +86,8 @@ static void init_isr(void)
 #ifdef HAS_SPRITES
 
 
+uint8_t spritea = 0;
+
 
 #define NUM_SPRITES 128
 
@@ -95,11 +97,16 @@ sprite sprites[NUM_SPRITES];
 
 #endif
 
+// extern uint8_t zx_ink_colour;
+// extern uint8_t zx_paper_colour;
+
 static void init_tests(void)
 {
     m_zx_border(INK_YELLOW);
     zx_cls(INK_BLACK | PAPER_CYAN);
     layer2_configure(true, false, false, 0);
+    // zx_ink_colour = INK_BLACK;
+    // zx_paper_colour =PAPER_CYAN;
 }
 
 int8_t newspeed(int8_t speed) {
@@ -395,6 +402,102 @@ __asm
 ;   	C_LINE	213,"src/main.c::do_x::0::14"
 __endasm
 }
+
+#define do_y_e do_y_e_c
+
+void do_y_e_asm(void) __naked {
+    __asm
+    ; ms->y ++ ms->vy
+
+	ld	hl,(_ms)
+	inc	hl
+	push	hl
+	ld	l,(hl)
+	ld	h,0
+	push	hl
+	ld	hl,(_ms)
+	call	l_gchar3
+	pop	de
+	add	hl,de
+	pop	de
+	ld	a,l
+	ld	(de),a
+	ld	hl,(_ms)
+	call	l_gchar3
+	call	l_neg
+	push	hl
+	ld	hl,(_ms)
+	call	l_gchar6
+	pop	de
+	call	l_le
+	jp	nc,do_ye_i_14	;
+	ld	hl,(_ms)
+	inc	hl
+	inc	hl
+	inc	hl
+	push	hl
+	ld	hl,(_ms)
+	call	l_gchar6
+	ld	a,l
+	pop	de
+	ld	(de),a
+	ret
+.do_ye_i_14
+	ld	hl,(_ms)
+	inc	hl
+	inc	hl
+	inc	hl
+	push	hl
+	call	l_gchar
+	inc	hl
+	inc	hl
+	ld	a,l
+	call	l_sxt
+	pop	de
+	ld	a,l
+	ld	(de),a
+.do_ye_i_15
+	ret
+   __endasm
+}
+void do_y_e_c(void) {
+    __asm
+    ;ms->y +=ms->vy;    
+        ld hl, (_ms)
+        inc hl
+        ld a, (hl) ; y
+        inc hl
+        inc hl
+        ld l, (hl) ; vx
+        add a, l
+        ld hl, (_ms)
+        inc hl
+        ld (hl),a 
+    __endasm
+//    ms->y += ms->vy;
+
+    __asm
+    ; if (-ms->vy <= ms->f1)
+    __endasm
+    if (-ms->vy <= ms->f1) {
+        __asm
+        ; ms->vy = ms->f1;
+        __endasm
+        ms->vy = ms->f1;
+    __asm
+    ; else
+    __endasm
+    } else {
+        __asm
+        ; ms->vy +=2;
+        __endasm
+        ms->vy++;
+    }
+    __asm
+    ; end func
+    __endasm
+}
+
 void do_y_c(void) {
     __asm
     ld a, INK_GREEN
@@ -433,6 +536,8 @@ uint8_t i = 0;
 
 int main(void)
 {
+    printAt(0, 0, "Press a key to create fish");
+
     uint8_t sprBuf[256];
 
 #if defined HAS_MUSIC
@@ -446,8 +551,12 @@ int main(void)
     layer2_load_screen("screen1.nxi", NULL, 7, false);
 #endif
 
-    zx_cls(INK_BLACK | PAPER_CYAN);
+    // while (1) {
+    //     printAt(0, 0, "Press a key to create fish");
+    // }
 
+
+    // zx_cls(INK_BLACK | PAPER_CYAN);
 
     // Endless loop
 
@@ -465,9 +574,15 @@ int main(void)
 
     ms = sprites;
 
-    i = 0;
-    while (i < NUM_SPRITES) {
+//    printAt(0, 0, "Press a key to create fish");
 
+    i = 0;
+
+
+    while (i < NUM_SPRITES) {
+        memset(ms, 0, sizeof(*ms));
+        ms->y = 210;
+    if(0) {
         ms->x = i ;
         // ms->x = 0;
         __asm 
@@ -493,7 +608,7 @@ int main(void)
         // ms->vy = 1;
         ms->spriteFlags = 0;
         ms->spritePattern = 0;
-
+    }
         ms++;
         i++;
     }
@@ -549,19 +664,19 @@ int main(void)
         __endasm
 
         // in_Inkey();
-        if (in_inkey()) {
-            ply_akg_stop();
-            in_wait_nokey();
-            // songnum++;
-            if (songnum > 14) songnum = 0;
-            zx_cls(INK_BLACK | PAPER_WHITE);
-            printAt(3,  9, "Press any key for next song");
+        // if (in_inkey()) {
+        //     ply_akg_stop();
+        //     in_wait_nokey();
+        //     // songnum++;
+        //     if (songnum > 14) songnum = 0;
+        //     // zx_cls(INK_BLACK | PAPER_WHITE);
+        //     printAt(3,  9, "Press any key for next song");
 
-            char s = songnum;
-            ply_akg_init(mysong, s);
+        //     char s = songnum;
+        //     ply_akg_init(mysong, s);
 
-            printf("\x16%c%c%s %d", 3, 7, "Playing song", songnum);
-        }
+        //     printf("\x16%c%c%s %d", 3, 7, "Playing song", songnum);
+        // }
 #endif
 
 #if defined HAS_SPRITES
@@ -573,7 +688,18 @@ int main(void)
         __endasm
 
         set_sprite_attrib_slot(0);
-
+        if (in_inkey()) {
+            if (spritea < NUM_SPRITES) {
+                ms = &sprites[spritea];
+                ms->x = 0;
+                ms->y = 176;
+                ms->vx = 0-(rand()%4 +1); // -1 to -8
+                ms->vy = 0-((rand()%8 + 8)); // -8 to -25
+                ms->f1 = ms->vy;
+                spritea++;
+                printf("\x16%c%c%s %d", 0, 1, "Fish:", spritea);
+            }
+        }
         // __asm 
         //     ld a, INK_YELLOW
         //     out($fe), a
@@ -582,7 +708,7 @@ int main(void)
         ms = sprites;
         i = 0;
 
-        while (i < NUM_SPRITES) {
+        while (i < spritea) {
             __asm
                 ; // b = i %2
                 // ld a, INK_YELLOW
@@ -600,7 +726,7 @@ int main(void)
             }
 
             do_x();
-            do_y();
+            do_y_e();
 
             __asm
             // ; Update attributes
@@ -681,7 +807,8 @@ int main(void)
 
 
             ld a, (_i)
-            sub NUM_SPRITES
+            ld hl, _spritea
+            sub (hl)
             jp nc, endupdate
 
             ld a, INK_RED
@@ -736,8 +863,19 @@ int main(void)
             out($fe), a
         __endasm
 
+        // if (spritea < NUM_SPRITES) {
+        //     spritea++;
+        // }
     }
 
     return 0;
     
 }
+
+
+// #define VOLUME 128
+
+// void level_w(ucom4cpu *cpu, uint8_t data) {
+// 	data *=VOLUME;
+// 	cpu->audio_level = data;
+// }

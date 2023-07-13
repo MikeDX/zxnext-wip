@@ -9,7 +9,7 @@ set(CMAKE_C_COMPILER   zcc)
 set(CMAKE_CXX_COMPILER zcc)
 
 # where is the target environment located
-set(CMAKE_FIND_ROOT_PATH  /Users/mike/src/stuff/z88dk/bin/zcc)
+set(CMAKE_FIND_ROOT_PATH  /Users/mike/src/stuff/z88dk/)
 
 # search programs in the host environment
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)

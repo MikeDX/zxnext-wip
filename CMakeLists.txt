@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/next.cmake)
-
 project(YourProjectName)
 
 # Override object file extension
@@ -55,8 +53,22 @@ target_link_libraries(zxn_sprite_1 PRIVATE "-L${LIBRARY_INCLUDE_PATH}")
 # Set the final .nex file destination
 set(NEX_FILE_DESTINATION ${CMAKE_BINARY_DIR}/bin/zxn_sprite_1.nex)
 
+# Copy additional files to the bin directory
+set(ASSETS_DESTINATION ${CMAKE_BINARY_DIR}/bin)
+set(BUILD_DESTINATION ${CMAKE_BINARY_DIR}/build)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets/all.nxp ${CMAKE_CURRENT_SOURCE_DIR}/assets/all.spr ${CMAKE_CURRENT_SOURCE_DIR}/assets/screen1.nxi DESTINATION ${ASSETS_DESTINATION})
+
+# Set the final .nex file destination
+set(NEX_FILE_DESTINATION ${CMAKE_BINARY_DIR}/bin/zxn_sprite_1.nex)
+
 # Copy the final .nex file to the bin directory
 add_custom_command(TARGET zxn_sprite_1 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:zxn_sprite_1> ${NEX_FILE_DESTINATION}
-    COMMENT "Copying zxn_sprite_1.nex to bin directory"
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/assets/all.nxp ${ASSETS_DESTINATION}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/assets/all.spr ${ASSETS_DESTINATION}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/assets/screen1.nxi ${ASSETS_DESTINATION}
+    COMMENT "Copying zxn_sprite_1.nex and additional files to bin directory"
 )
+
+# Set the additional files and .nex file as output
+set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${ASSETS_DESTINATION}/all.nxp;${ASSETS_DESTINATION}/all.spr;${ASSETS_DESTINATION}/screen1.nxi;${NEX_FILE_DESTINATION};${BUILD_DESTINATION}/zxn_sprite_1.map")
