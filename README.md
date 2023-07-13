@@ -1,31 +1,12 @@
-# Sprite Examples for Spectrum Next
+# Sprite / Layer2 / Music Example for zx next
 
-Uses code from Stefan Bylund's [ZX Next Sprites library](https://github.com/stefanbylund/zxnext_sprite)
+Forked from https://github.com/ncot-technology/specnext-sprites-example/
 
-## Requirements
+Use the following command to compile, since the cmake / make currently does not work
 
-1. Make sure you have Z88dk installed and working
-2. You'll need a working emulator / real hardware
-3. The Makefile is set up to compile "main.c" only
+```
+zcc +zxn  -subtype=nex -v -SO3 --list -m -s -clib=new -Iinclude -startup=1 -Cz"--clean" -create-app  src/main.c src/layer2.c src/sprites.c -o build/zxn_sprite_1.nex  -L/Users/mike/src/zxnext_layer2/lib/sccz80/
+```
 
-## How to use
+You will need the files from the "assets" folder copied to the same place as the resulting .nex file
 
-If it all worked, typing `make` in the source directory should at least compile
-the code specified in `main.c` for you.
-
-To compile the examples, go into the `src/` directory and *copy* one of the `.c` files to `main.c` and run `make`.
-
-The resulting `.nex` file is available in the `build/` directory. If you do
-a `make install` it will get moved into a `bin/` directory.
-
-Copy the `.nex` file onto your SD card / emulator along with any data files needed and run.
-
-## Examples
-
-* src/animation.c - How to do very rudimentary animation
-* src/composite.c - Composite sprite example
-* src/main.c - Copy an example to this file to compile it
-* src/multiple-sprites.c - How to have multiple sprites
-* src/rotation.c - Rotation example
-* src/scaling.c - 2x 4x and 8x scaling example
-* src/simple-sprites.c - How to get a sprite on the screen

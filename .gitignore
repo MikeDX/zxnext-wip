@@ -11,3 +11,4 @@ CMakeFiles
 .DS_Store
 .tmp/disasm.list
 syncpoint.dat
+*.o
