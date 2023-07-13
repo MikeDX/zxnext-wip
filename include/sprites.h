@@ -63,8 +63,8 @@ typedef struct {
     int8_t vx, vy;
     uint8_t spriteFlags;
     uint8_t spritePattern;
-    uint8_t f1;
-    uint8_t f2;
+    int8_t f1;
+    int8_t f2;
     uint8_t f3;
     uint8_t f4;    
 } sprite;
