@@ -74,6 +74,7 @@ file_format = Struct(
 
 # Read and parse the file
 def parse_file(filename):
+    print(f"Parsing nex: {filename}")
     with open(filename, "rb") as f:
         data = f.read()
         try:
@@ -84,9 +85,9 @@ def parse_file(filename):
             return None
 
 # Example usage
-#parsed_file = parse_file("bin/zxn_sprite_1.nex")
-#if parsed_file:
-#    print(parsed_file)
+parsed_file = parse_file("bin/zxn_sprite_1.nex")
+if parsed_file:
+    print(parsed_file)
 
 parsed_file = parse_file("build/zxn_sprite_1.nex")
 if parsed_file:
