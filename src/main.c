@@ -20,6 +20,7 @@
 extern sprite *ms;
 
 #define m_zx_border( X ) zx_border(X)
+#define printAt(col, row, str) printf("\x16%c%c%s", (col), (row), (str))
 
 #define HAS_IMAGE 1
 #define HAS_SPRITES
@@ -27,20 +28,15 @@ extern sprite *ms;
 
 #if defined HAS_MUSIC
 #include <psg/arkos.h>
-#endif
 
-
-
-#define printAt(col, row, str) printf("\x16%c%c%s", (col), (row), (str))
-
-#if defined HAS_MUSIC
 
 extern uint8_t mysong[];
 
 void wrapper() __naked
 {
 __asm
-   INCLUDE "mysong.asm"
+; Must specify relative path due to cmake cwd
+   INCLUDE "../include/mysong.asm"
 __endasm;
 }
 
@@ -746,8 +742,8 @@ int main(void)
         
         // m_zx_border(INK_YELLOW);
         __asm 
-            // ld a, INK_BLACK
-            // out(0xfe), a
+            ld a, INK_BLACK
+            out(0xfe), a
         __endasm;
 
         __asm
