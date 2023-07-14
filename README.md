@@ -28,7 +28,7 @@ This will produce a build in the "bin" directory at the root of your project whi
 Alternatively You can build the current version using the following command
 
 ```
-zcc +zxn  -subtype=nex -v -SO3 --list -m -s -clib=new -Iinclude -startup=1 -Cz"--clean" -create-app  src/main.c src/layer2.c src/sprites.c -o build/zxn_sprite_1.nex  -L/Users/mike/src/zxnext_layer2/lib/sccz80/
+zcc +zxn  -subtype=nex -vn -SO3 --list -m -s -clib=new -Iinclude -startup=1 -Cz"--clean" -create-app  src/main.c src/layer2.c src/sprites.c src/stuff.asm src/mysong.asm -o build/zxn_sprite_1.nex  -L/Users/mike/src/zxnext_layer2/lib/sccz80/
 ```
 
 You will need the files from the "assets" folder copied to the same place as the resulting .nex file
