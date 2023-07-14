@@ -11,11 +11,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <psg/arkos.h>
 #include <arch/zxn/esxdos.h>
 #include <errno.h>
-
-#include <psg/arkos.h>
 
 #include "zxnext_layer2.h"
 #include "sprites.h"
@@ -24,18 +21,16 @@ extern sprite *ms;
 
 #define m_zx_border( X ) zx_border(X)
 
-#pragma output CRT_ORG_CODE = 0x6164
-#pragma output REGISTER_SP = 0xC000
-#pragma output CLIB_MALLOC_HEAP_SIZE = 0
-#pragma output CLIB_STDIO_HEAP_SIZE = 0
-#pragma output CLIB_FOPEN_MAX = -1
-
 #define HAS_IMAGE 1
 #define HAS_SPRITES
 #define HAS_MUSIC 1
 
+#if defined HAS_MUSIC
+#include <psg/arkos.h>
+#endif
 
-#pragma printf = "%c %s %d"
+
+
 #define printAt(col, row, str) printf("\x16%c%c%s", (col), (row), (str))
 
 #if defined HAS_MUSIC
@@ -135,7 +130,7 @@ void do_x_asm(void) __naked {
 __asm
     ; border white
     ld a,  0x07
-    out($fe),a
+    out(0xfe),a
 
     ; tmp8 = x + vx
 
@@ -229,44 +224,45 @@ __asm
    
    
 ;   	C_LINE	213,"src/main.c::do_x::0::14"
-__endasm
+__endasm;
+
 }
 
 void do_x_c(void) {
     __asm
     ld a, INK_WHITE
-    out($fe),a
+    out(0xfe),a
     
     ; tmp8 = x + vx
-    __endasm
+    __endasm;
 
 
     tmp8 = ms->x + ms->vx;
 
     __asm
     ; if vx > 0
-    __endasm
+    __endasm;
 
     if (ms->vx > 0) { // right
 
     __asm
     ; if tmp8 > 240
-    __endasm
+    __endasm;
         if (tmp8 > 240) {
             __asm
             ; x = 240
-            __endasm
+            __endasm;
 
             ms->x = 240;
 
             __asm
             ; vx = newspeed(vx)
-            __endasm
+            __endasm;
 
             ms->vx = newspeed(ms->vx);
             __asm
             ; spriteFlags = MIRROR_X_MASK
-            __endasm
+            __endasm;
 
             ms->spriteFlags = MIRROR_X_MASK;
 
@@ -274,7 +270,7 @@ void do_x_c(void) {
             __asm
             ; else
             ; x = tmp8;
-            __endasm
+            __endasm;
 
             ms->x = tmp8;
         }
@@ -282,26 +278,26 @@ void do_x_c(void) {
             __asm
             ; else
             ; if tmp8 > x
-            __endasm
+            __endasm;
 
         if (tmp8 > ms->x) { // overflow
             __asm
             ; x = 0
-            __endasm
+            __endasm;
             ms->x = 0;
             __asm
             ; vx = newspeed(vx)
-            __endasm
+            __endasm;
             ms->vx = newspeed(ms->vx);
             __asm
             ; spriteFlags = 0
-            __endasm
+            __endasm;
 
             ms->spriteFlags = 0;
         } else {
             __asm
             ; x = tmp8
-            __endasm
+            __endasm;
 
             ms->x = tmp8;
         }
@@ -314,7 +310,7 @@ void do_y_asm(void) __naked {
 __asm
     ; border cyan
     ld a,  INK_RED
-    out($fe),a
+    out(0xfe),a
 
     ; tmp8 = y + vx
 
@@ -400,11 +396,12 @@ __asm
    
    
 ;   	C_LINE	213,"src/main.c::do_x::0::14"
-__endasm
+__endasm;
 }
 
 #define do_y_e do_y_e_c
 
+#ifdef NOTYET
 void do_y_e_asm(void) __naked {
     __asm
     ; ms->y ++ ms->vy
@@ -458,8 +455,11 @@ void do_y_e_asm(void) __naked {
 	ld	(de),a
 .do_ye_i_15
 	ret
-   __endasm
+   __endasm;
 }
+
+#endif
+
 void do_y_e_c(void) {
     __asm
     ;ms->y +=ms->vy;    
@@ -473,43 +473,44 @@ void do_y_e_c(void) {
         ld hl, (_ms)
         inc hl
         ld (hl),a 
-    __endasm
+    __endasm;
 //    ms->y += ms->vy;
 
     __asm
     ; if (-ms->vy <= ms->f1)
-    __endasm
+    __endasm;
     if (-ms->vy <= ms->f1) {
         __asm
         ; ms->vy = ms->f1;
-        __endasm
+        __endasm;
         ms->vy = ms->f1;
     __asm
     ; else
-    __endasm
+    __endasm;
     } else {
         __asm
         ; ms->vy +=2;
-        __endasm
+        __endasm;
         ms->vy++;
     }
     __asm
     ; end func
-    __endasm
+    __endasm;
 }
+
 
 void do_y_c(void) {
     __asm
-    ld a, INK_GREEN
-    out($fe),a
-    __endasm
+    ld a, INK_GREEN;
+    out(0xfe),a;
+    __endasm;
     
     tmp8 = ms->y + ms->vy;
     
     if (ms->vy > 0) {
         __asm
         ; Going down
-        __endasm
+        __endasm;
 
         if (tmp8 > 174) {
             ms->y = 174;
@@ -520,7 +521,7 @@ void do_y_c(void) {
     } else  {
         __asm
         ; Going up
-        __endasm
+        __endasm;
 
         if (tmp8 > 192) {
             ms->y = 0;
@@ -620,8 +621,8 @@ int main(void)
     while(1) {
         __asm 
             ld a, INK_WHITE
-            out ( $fe ), a
-        __endasm
+            out ( 0xfe ), a
+        __endasm;
         // intrinsic_halt();
         // if(1) {
             // for (int i = 0; i < 2; i++) {
@@ -639,8 +640,8 @@ int main(void)
 #if defined HAS_MUSIC
         __asm 
         ld a, INK_BLUE
-        out($fe), a
-        __endasm
+        out(0xfe), a
+        __endasm;
         intrinsic_di();
         ply_akg_play();
         intrinsic_ei();
@@ -649,8 +650,8 @@ int main(void)
 #if defined HAS_IMAGE
         __asm 
         ld a, INK_CYAN
-        out($fe), a
-        __endasm
+        out(0xfe), a;
+        __endasm;
 
         layer2_set_offset_x(255-sprites[0].x);
         layer2_set_offset_y(192-sprites[0].y);
@@ -660,8 +661,8 @@ int main(void)
 #if defined HAS_MUSIC
         __asm 
         ld a, INK_RED
-        out($fe), a
-        __endasm
+        out(0xfe), a
+        __endasm;
 
         // in_Inkey();
         // if (in_inkey()) {
@@ -685,7 +686,7 @@ int main(void)
 
         ; next sprite part
 
-        __endasm
+        __endasm;
 
         set_sprite_attrib_slot(0);
         if (in_inkey()) {
@@ -700,10 +701,10 @@ int main(void)
                 printf("\x16%c%c%s %d", 0, 1, "Fish:", spritea);
             }
         }
-        // __asm 
-        //     ld a, INK_YELLOW
-        //     out($fe), a
-        // __endasm
+        __asm 
+            ld a, INK_YELLOW
+            out(0xfe), a
+        __endasm;
 
         ms = sprites;
         i = 0;
@@ -711,15 +712,15 @@ int main(void)
         while (i < spritea) {
             __asm
                 ; // b = i %2
-                // ld a, INK_YELLOW
-                // out($fe), a
-            __endasm
+                ld a, INK_YELLOW
+                out(0xfe), a
+            __endasm;
     
             // ms = &sprites[i];
 
             __asm 
                 ; Timer check to animate
-            __endasm
+            __endasm;
             if (timer == 0) {
                 ms->spritePattern ++;
                 ms->spritePattern &=1;
@@ -730,9 +731,9 @@ int main(void)
 
             __asm
             // ; Update attributes
-            //     ld a, INK_RED
-            //     out($fe), a
-            __endasm
+                ld a, INK_RED
+                out(0xfe), a
+            __endasm;
 
             // set_sprite_attrs_mike();
             ms++;
@@ -740,14 +741,14 @@ int main(void)
         }
         __asm 
         ;         out sprite vars
-        __endasm
+        __endasm;
 
         
         // m_zx_border(INK_YELLOW);
         __asm 
-            ld a, INK_BLACK
-            out($fe), a
-        __endasm
+            // ld a, INK_BLACK
+            // out(0xfe), a
+        __endasm;
 
         __asm
         ld hl, _timer;
@@ -763,7 +764,7 @@ int main(void)
 
     __asm 
     ld a, INK_CYAN
-    out($fe), a
+    out(0xfe), a
     
         ; WAIT_FOR_SCANLINE_192
     .start_wait_for_scanline_192:
@@ -776,17 +777,17 @@ int main(void)
         cp	192 ; is it 192?
         jp	nz,	start_wait_for_scanline_192_loop ; repeat if not
         
-    __endasm
+    __endasm;
 
         // Do the sprite update after the screen update
 
         // if(0) {
         __asm
             ld a, INK_YELLOW
-            out($fe), a
+            out(0xfe), a
 
             ; update next regs for sprite update
-        __endasm
+        __endasm;
         
         set_sprite_pattern_slot(0);
 
@@ -796,11 +797,11 @@ int main(void)
         ; i = 0
         and a
         ld (_i),a
-        __endasm
+        __endasm;
         // i = 0;
         __asm 
         ; while i < NUM_SPRITES
-        __endasm
+        __endasm;
 
         __asm
         .startupdate
@@ -812,13 +813,13 @@ int main(void)
             jp nc, endupdate
 
             ld a, INK_RED
-            out($fe), a
+            out(0xfe), a
 
             call _set_sprite_attrs_mike
 
             ; border blaack
             ld a, INK_BLACK
-            out($fe), a
+            out(0xfe), a
 
             ; inc _i
             ld a, (_i)
@@ -834,25 +835,25 @@ int main(void)
             jr startupdate
 
         .endupdate
-        __endasm
+        __endasm;
         // while (i < NUM_SPRITES) {
 
         //     // ms = &sprites[i];
         //     set_sprite_attrs_mike();
         //     __asm
         //     ld a, INK_BLACK
-        //     out ($fe), a
+        //     out (0xfe), a
         //     ; inc i
-        //     __endasm
+        //     __endasm;
         //     i++;
         //     __asm
         //     ; inc ms
-        //     __endasm
+        //     __endasm;
         //     ms++;
         //     // ms+=sizeof(sprite);
         //     __asm
         //     ; while loop end
-        //     __endasm
+        //     __endasm;
         // }
         // }
 
@@ -860,8 +861,8 @@ int main(void)
             ; end loop
             ; BORDER GREEN
             ld a, INK_GREEN
-            out($fe), a
-        __endasm
+            out(0xfe), a
+        __endasm;
 
         // if (spritea < NUM_SPRITES) {
         //     spritea++;

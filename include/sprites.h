@@ -10,11 +10,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <psg/arkos.h>
 #include <arch/zxn/esxdos.h>
 #include <errno.h>
-
-#include <psg/arkos.h>
 
 #include "zxnext_layer2.h"
 

@@ -25,13 +25,18 @@ set(SOURCES
 include_directories(include)
 set(LIBRARY_INCLUDE_PATH "/Users/mike/src/zxnext_layer2/lib/sccz80/")
 
+set(CLIB "-clib=new")
+# set(CLIB -clib=sdcc_iy -SO3 --max-allocs-per-node200000)
+
 
 # Set the compiler flags
-set(COMPILER_FLAGS ${CMAKE_C_FLAGS} +zxn -v --list -SO3 -c -clib=new  -pragma-include:zpragma.inc )
+set(COMPILER_FLAGS ${CMAKE_C_FLAGS} +zxn -v --list -c ${CLIB} -s -pragma-include:zpragma.inc )
+
 
 # Set the linker flags globally
-set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "+zxn -vn -startup=1 -m -clib=new -subtype=nex -Cz\"--clean\" -create-app")
+set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "+zxn -vn -startup=1 -m ${CLIB} -pragma-include:zpragma.inc -subtype=nex -Cz\"--clean\" -create-app")
 
+set(CLIB "-clib=new")
 # Set the output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build)
 
