@@ -23,6 +23,7 @@ set(SOURCES
 
 # Add include directories
 include_directories(include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 set(LIBRARY_INCLUDE_PATH "/Users/mike/src/zxnext_layer2/lib/sccz80/")
 
 set(CLIB "-clib=new")
@@ -30,11 +31,11 @@ set(CLIB "-clib=new")
 
 
 # Set the compiler flags
-set(COMPILER_FLAGS ${CMAKE_C_FLAGS} +zxn -v --list -c ${CLIB} -s -pragma-include:zpragma.inc )
+set(COMPILER_FLAGS ${CMAKE_C_FLAGS} +zxn -vn --list -c ${CLIB} -s -pragma-include:${CMAKE_CURRENT_SOURCE_DIR}/zpragma.inc )
 
 
 # Set the linker flags globally
-set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "+zxn -vn -startup=1 -m ${CLIB} -pragma-include:zpragma.inc -subtype=nex -Cz\"--clean\" -create-app")
+set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "+zxn -vn -startup=1 -m ${CLIB} -pragma-include:${CMAKE_CURRENT_SOURCE_DIR}/zpragma.inc -subtype=nex -Cz\"--clean\" -create-app")
 
 set(CLIB "-clib=new")
 # Set the output directory
@@ -69,10 +70,21 @@ set(NEX_FILE_DESTINATION ${CMAKE_BINARY_DIR}/bin/zxn_sprite_1.nex)
 # Copy the final .nex file to the bin directory
 add_custom_command(TARGET zxn_sprite_1 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:zxn_sprite_1> ${NEX_FILE_DESTINATION}
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/assets/all.nxp ${ASSETS_DESTINATION}
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/assets/all.spr ${ASSETS_DESTINATION}
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/assets/screen1.nxi ${ASSETS_DESTINATION}
-    COMMENT "Copying zxn_sprite_1.nex and additional files to bin directory"
+#     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/assets/all.nxp ${ASSETS_DESTINATION}
+#     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/assets/all.spr ${ASSETS_DESTINATION}
+#     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/assets/screen1.nxi ${ASSETS_DESTINATION}
+    COMMENT "Copying zxn_sprite_1.nex to bin directory"
+)
+
+
+# Create an "install" target to copy files during installation
+install(TARGETS zxn_sprite_1
+    RUNTIME DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/bin
+)
+
+# Copy additional files during installation
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/all.nxp ${CMAKE_CURRENT_SOURCE_DIR}/assets/all.spr ${CMAKE_CURRENT_SOURCE_DIR}/assets/screen1.nxi
+    DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/bin
 )
 
 # Set the additional files and .nex file as output
