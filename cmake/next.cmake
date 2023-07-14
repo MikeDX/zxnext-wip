@@ -19,11 +19,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 
-# Override object file extension
-set(CMAKE_C_OUTPUT_EXTENSION ".o")
-set(CMAKE_CXX_OUTPUT_EXTENSION ".o")
-
-
 # Override Clang-related variables
 set(CMAKE_C_COMPILER_TARGET "")
 set(CMAKE_OSX_ARCHITECTURES "")
