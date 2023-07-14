@@ -19,6 +19,7 @@ Note: This script assumes a specific structure for the NEX file format. Make sur
 
 Author: MikeDX (https://github.com/MikeDX) assisted by ChatGPT (https://chat.openai.com/)
 
+
 The NEX file format is used for storing various graphics and memory bank data for the ZX Spectrum Next computer. This header provides essential information about the file structure and contents.
 
 Header Structure:
