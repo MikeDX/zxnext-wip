@@ -12,3 +12,4 @@ CMakeFiles
 .tmp/disasm.list
 syncpoint.dat
 *.o
+Makefile
